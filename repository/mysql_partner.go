@@ -1,11 +1,9 @@
 package repository
 
 import (
-	"log"
 	"time"
 
 	"github.com/arfan21/getprint-partner/models"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -13,12 +11,13 @@ type mysqlPartnerRepo struct {
 	db *gorm.DB
 }
 
+//NewPartnerRepo ....
 func NewPartnerRepo(db *gorm.DB) models.PartnerRepository {
-	repo := mysqlPartnerRepo{db}
 
-	return &repo
+	return &mysqlPartnerRepo{db}
 }
 
+//Create ....
 func (repo *mysqlPartnerRepo) Create(partner *models.Partner) error {
 	err := repo.db.Create(partner).Error
 
@@ -28,10 +27,12 @@ func (repo *mysqlPartnerRepo) Create(partner *models.Partner) error {
 
 	return nil
 }
-func (repo *mysqlPartnerRepo) Gets() (*[]models.Partner, error) {
+
+//Fetch ....
+func (repo *mysqlPartnerRepo) Fetch(query string, args string) (*[]models.Partner, error) {
 	partners := make([]models.Partner, 0)
 
-	err := repo.db.Preload("Price").Preload("Address").Find(&partners).Error
+	err := repo.db.Debug().Preload("Price").Preload("Address").Where(query, args).Find(&partners).Error
 
 	if err != nil {
 		return nil, err
@@ -39,43 +40,31 @@ func (repo *mysqlPartnerRepo) Gets() (*[]models.Partner, error) {
 
 	return &partners, nil
 }
+
+//GetByID ....
 func (repo *mysqlPartnerRepo) GetByID(id uint) (*models.Partner, error) {
 	partner := new(models.Partner)
-	err := repo.db.Preload("Price").Preload("Address").Find(&partner, id).Error
+	err := repo.db.Preload("Price").Preload("Address").First(&partner, id).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println(partner.ID)
-
-	if partner.ID == 0 {
-		return nil, errors.New("partner not found")
-	}
-
 	return partner, nil
 }
+
+//Update ....
 func (repo *mysqlPartnerRepo) Update(id uint, partner *models.Partner) error {
-	partnerDB, err := repo.GetByID(id)
 
-	if err != nil {
-		return err
-	}
-
-	err = repo.db.Debug().Table("partners").Where("id = ?", partnerDB.ID).Updates(map[string]interface{}{
+	err := repo.db.Debug().Table("partners").Where("id = ?", id).Updates(map[string]interface{}{
 		"updated_at":   time.Now(),
-		"partner_name": partner.PartnerName,
-		"owner_name":   partner.OwnerName,
+		"name":         partner.Name,
 		"email":        partner.Email,
 		"phone_number": partner.PhoneNumber,
 		"status":       partner.Status,
 	}).Error
 
-	if err != nil {
-		return err
-	}
-
-	err = repo.db.Debug().Table("prices").Where("partner_id = ?", partnerDB.ID).Updates(map[string]interface{}{
+	err = repo.db.Debug().Table("prices").Where("partner_id = ?", id).Updates(map[string]interface{}{
 		"updated_at": time.Now(),
 		"print":      partner.Price.Print,
 		"fotocopy":   partner.Price.Fotocopy,
@@ -86,7 +75,7 @@ func (repo *mysqlPartnerRepo) Update(id uint, partner *models.Partner) error {
 		return err
 	}
 
-	err = repo.db.Debug().Table("addresses").Where("partner_id = ?", partnerDB.ID).Updates(map[string]interface{}{
+	err = repo.db.Debug().Table("addresses").Where("partner_id = ?", id).Updates(map[string]interface{}{
 		"updated_at": time.Now(),
 		"address":    partner.Address.Address,
 		"lat":        partner.Address.Lat,

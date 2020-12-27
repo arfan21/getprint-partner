@@ -27,7 +27,7 @@ func loadEnv() {
 func Conn() (*gorm.DB, error) {
 	loadEnv()
 
-	return utils.Connect(os.Getenv("DB_USER_TEST"), os.Getenv("DB_PASSWORD_TEST"), os.Getenv("DB_HOST_TEST"), os.Getenv("DB_PORT_TEST"), os.Getenv("DB_NAME_TEST"))
+	return utils.Connect()
 }
 
 func ClearTable(db *gorm.DB) {
@@ -43,7 +43,7 @@ func TestCreate(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	ClearTable(db)
+	// ClearTable(db)
 
 	repo := NewPartnerRepo(db)
 
@@ -58,11 +58,10 @@ func TestCreate(t *testing.T) {
 	address.Lng = "-12,1200012"
 
 	payload := &models.Partner{
-		Owner_id:    2,
-		PartnerName: "enter komp 2",
-		OwnerName:   "babang2",
-		Email:       "enter2@enter.com",
-		PhoneNumber: 628122212,
+		UserID:      1,
+		Name:        "enter komp",
+		Email:       "enter@enter.com",
+		PhoneNumber: "6281222212",
 		Price:       *price,
 		Address:     *address,
 	}
@@ -84,7 +83,7 @@ func TestGet(t *testing.T) {
 
 	repo := NewPartnerRepo(db)
 
-	data, err := repo.Gets()
+	data, err := repo.Fetch("status=?", "active")
 
 	d, _ := json.MarshalIndent(data, "", "\t")
 
@@ -138,10 +137,9 @@ func TestUpdate(t *testing.T) {
 	address.Lng = "-12,2221"
 
 	payload := &models.Partner{
-		PartnerName: "kios komp",
-		OwnerName:   "deddy",
+		Name:        "kios komp",
 		Email:       "kios@enter.com",
-		PhoneNumber: 628,
+		PhoneNumber: "628",
 		Price:       *price,
 		Address:     *address,
 		Status:      "active",

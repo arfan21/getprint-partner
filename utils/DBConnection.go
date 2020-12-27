@@ -3,20 +3,21 @@ package utils
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/arfan21/getprint-partner/models"
-
+	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-func Connect(DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME string) (*gorm.DB, error) {
+func Connect() (*gorm.DB, error) {
 	var DBURL string
 
-	if DB_PASSWORD == "" {
-		DBURL = fmt.Sprintf("%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DB_USER, DB_HOST, DB_PORT, DB_NAME)
+	if os.Getenv("DB_PASSWORD") == "" {
+		DBURL = fmt.Sprintf("%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", os.Getenv("DB_USER"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	} else {
-		DBURL = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
+		DBURL = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	}
 	var err error
 	db, err := gorm.Open(mysql.Open(DBURL), &gorm.Config{})
@@ -25,7 +26,7 @@ func Connect(DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME string) (*gorm.DB, 
 		return nil, err
 	}
 
-	db.AutoMigrate(&models.Partner{}, &models.Price{}, &models.Address{})
+	db.AutoMigrate(&models.Partner{}, &models.Price{}, &models.Address{}, &models.Follower{})
 	log.Println("MySql Connected")
 	return db, nil
 }
