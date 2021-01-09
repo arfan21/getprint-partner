@@ -1,12 +1,10 @@
 package services
 
 import (
-	"context"
 	"strings"
 
 	"github.com/arfan21/getprint-partner/models"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/sync/errgroup"
 )
 
 type partnerService struct {
@@ -128,27 +126,26 @@ func (s *partnerService) Update(id uint, partner *models.Partner) error {
 	}
 
 	if strings.Contains(partner.Picture, "base64") {
-		errg, _ := errgroup.WithContext(context.Background())
-
 		imgur := NewImgur()
 
-		errg.Go(func() error {
-			res, err := imgur.Upload(partner.Picture)
+		err := imgur.Delete(partner.DeleteHash)
 
-			if err != nil {
-				return err
-			}
-
-			link := res["data"].(map[string]interface{})["link"]
-
-			partner.Picture = link.(string)
-
-			return nil
-		})
-
-		if err := errg.Wait(); err != nil {
+		if err != nil {
 			return err
 		}
+
+		res, err := imgur.Upload(partner.Picture)
+
+		if err != nil {
+			return err
+		}
+
+		link := res["data"].(map[string]interface{})["link"]
+		deleteHash := res["data"].(map[string]interface{})["deletehash"]
+
+		partner.Picture = link.(string)
+		partner.DeleteHash = deleteHash.(string)
+
 	}
 
 	_, err := s.repo.GetByID(id)
