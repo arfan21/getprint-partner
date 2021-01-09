@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/arfan21/getprint-partner/models"
-	"github.com/arfan21/getprint-partner/utils"
 )
 
 type followerService struct {
@@ -40,7 +39,7 @@ func (service *followerService) Create(follower *models.Follower) error {
 	go func() {
 		defer wg.Done()
 
-		data, err := utils.GetUser(follower.UserID)
+		data, err := GetUser(follower.UserID)
 
 		if err != nil {
 			chanUser <- nil

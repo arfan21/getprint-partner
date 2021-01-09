@@ -1,4 +1,4 @@
-package utils
+package services
 
 import (
 	"encoding/json"
@@ -13,10 +13,9 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-var URL = os.Getenv("SERVICE_USER")
-
 func GetUser(id uint) (map[string]interface{}, error) {
-	res, err := http.Get(URL + "user/" + strconv.FormatUint(uint64(id), 10))
+	var url = os.Getenv("SERVICE_USER")
+	res, err := http.Get(url + "user/" + strconv.FormatUint(uint64(id), 10))
 
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {

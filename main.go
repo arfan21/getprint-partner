@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -11,7 +12,12 @@ import (
 )
 
 func main() {
-	port := ":" + os.Getenv("PORT")
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8000"
+	}
+
 	db, err := utils.Connect()
 
 	if err != nil {
@@ -22,5 +28,5 @@ func main() {
 	controllers.NewPartnerController(db, route)
 	controllers.NewFollowerController(db, route)
 
-	route.Logger.Fatal(route.Start(port))
+	route.Logger.Fatal(route.Start(fmt.Sprintf(":%s", port)))
 }

@@ -1,11 +1,12 @@
 package services
 
 import (
+	"context"
 	"strings"
 
 	"github.com/arfan21/getprint-partner/models"
-	"github.com/arfan21/getprint-partner/utils"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/sync/errgroup"
 )
 
 type partnerService struct {
@@ -22,17 +23,40 @@ func NewPartnerService(repo models.PartnerRepository, repoFollower models.Follow
 
 //Create ....
 func (s *partnerService) Create(partner *models.Partner) error {
-	_, err := utils.GetUser(partner.UserID)
+	_, err := GetUser(partner.UserID)
 
 	if err != nil {
 		return err
 	}
+
+	imgur := NewImgur()
+
+	res, err := imgur.Upload(partner.Picture)
+
+	if err != nil {
+		return err
+	}
+
+	if !res["success"].(bool) {
+		return models.ErrInternalServerError
+	}
+
+	link := res["data"].(map[string]interface{})["link"]
+	deleteHash := res["data"].(map[string]interface{})["deletehash"]
+
+	partner.Picture = link.(string)
+	partner.DeleteHash = deleteHash.(string)
 
 	err = s.repo.Create(partner)
 
 	if err != nil {
+		errDelete := imgur.Delete(partner.DeleteHash)
+		if errDelete != nil {
+			err = errDelete
+		}
 		return err
 	}
+	partner.DeleteHash = ""
 
 	return nil
 }
@@ -101,6 +125,30 @@ func (s *partnerService) GetByID(id uint) (*models.PartnerWithCountFollower, err
 func (s *partnerService) Update(id uint, partner *models.Partner) error {
 	if partner.Status == "" {
 		partner.Status = "inactive"
+	}
+
+	if strings.Contains(partner.Picture, "base64") {
+		errg, _ := errgroup.WithContext(context.Background())
+
+		imgur := NewImgur()
+
+		errg.Go(func() error {
+			res, err := imgur.Upload(partner.Picture)
+
+			if err != nil {
+				return err
+			}
+
+			link := res["data"].(map[string]interface{})["link"]
+
+			partner.Picture = link.(string)
+
+			return nil
+		})
+
+		if err := errg.Wait(); err != nil {
+			return err
+		}
 	}
 
 	_, err := s.repo.GetByID(id)

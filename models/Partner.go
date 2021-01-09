@@ -3,8 +3,6 @@ package models
 import (
 	"time"
 
-	validator "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gopkg.in/guregu/null.v4"
 	"gopkg.in/guregu/null.v4/zero"
@@ -19,6 +17,8 @@ type Partner struct {
 	Name        string    `gorm:"size:100;not null;unique" json:"name"`
 	Email       string    `gorm:"size:255;not null;unique" json:"email"`
 	PhoneNumber string    `gorm:"size:50;not null;unique" json:"phone_number"`
+	Picture     string    `gorm:"not null" json:"picture"`
+	DeleteHash  string    `gorm:"not null" json:"delete_hash,omitempty"`
 	Price       Price     `gorm:"constraint:OnDelete:CASCADE;" json:"price"`
 	Address     Address   `gorm:"constraint:OnDelete:CASCADE;" json:"address"`
 	Status      string    `gorm:"type:enum('inactive','active');default:'inactive'" json:"status"`
@@ -49,18 +49,6 @@ type Price struct {
 	Print     zero.Int  `gorm:"size:30" json:"print"`
 	Scan      zero.Int  `gorm:"size:30" json:"scan"`
 	Fotocopy  zero.Int  `gorm:"size:30" json:"fotocopy"`
-}
-
-func (p Partner) Validate() error {
-	return validator.Errors{
-		"user_id":      validator.Validate(p.UserID, validator.Required),
-		"name":         validator.Validate(p.Name, validator.Required),
-		"email":        validator.Validate(p.Email, validator.Required, is.Email),
-		"phone_number": validator.Validate(p.PhoneNumber, validator.Required),
-		"address":      validator.Validate(p.Address.Address, validator.Required),
-		"lat":          validator.Validate(p.Address.Lat, validator.Required),
-		"lng":          validator.Validate(p.Address.Lng, validator.Required),
-	}.Filter()
 }
 
 type PartnerRepository interface {

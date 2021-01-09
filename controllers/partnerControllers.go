@@ -8,6 +8,7 @@ import (
 	"github.com/arfan21/getprint-partner/repository"
 	"github.com/arfan21/getprint-partner/services"
 	"github.com/arfan21/getprint-partner/utils"
+	"github.com/arfan21/getprint-partner/validation"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -39,8 +40,8 @@ func (ctrl *partnerController) Create(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	if err := partner.Validate(); err != nil {
-		return c.JSON(http.StatusBadRequest, utils.Response("error", "error validating data", err))
+	if err := validation.Validate(*partner); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Response("error", err, nil))
 	}
 
 	err := ctrl.service.Create(partner)
@@ -97,8 +98,8 @@ func (ctrl *partnerController) Update(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	if err := partner.Validate(); err != nil {
-		return c.JSON(http.StatusBadRequest, utils.Response("error", "error validating data", err))
+	if err := validation.Validate(*partner); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Response("error", err, nil))
 	}
 
 	err = ctrl.service.Update(uint(id), partner)
