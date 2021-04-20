@@ -1,4 +1,4 @@
-package services
+package imgur
 
 import (
 	"bytes"
@@ -9,12 +9,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/arfan21/getprint-partner/models"
 )
 
 type Imgur interface {
-	Upload(data string) (map[string]interface{}, error)
+	Upload(data string) (*ImgurResponse, error)
 	Delete(deleteHash string) error
 }
 
@@ -27,7 +25,7 @@ func NewImgur() Imgur {
 	return &imgur{clientId: clientId}
 }
 
-func (img imgur) Upload(data string) (map[string]interface{}, error) {
+func (img imgur) Upload(data string) (*ImgurResponse, error) {
 	url := "https://api.imgur.com/3/upload"
 	dataBase64 := strings.Split(data, ",")[1]
 
@@ -60,14 +58,18 @@ func (img imgur) Upload(data string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var resJSON map[string]interface{}
+	imgurResponse := new(ImgurResponse)
 
-	err = json.Unmarshal(resBody, &resJSON)
+	err = json.Unmarshal(resBody, &imgurResponse)
 	if err != nil {
 		return nil, err
 	}
 
-	return resJSON, nil
+	if !imgurResponse.Success {
+		return nil, fmt.Errorf("%s", imgurResponse.Data.Error)
+	}
+
+	return imgurResponse, nil
 }
 
 func (img imgur) Delete(deleteHash string) error {
@@ -93,15 +95,15 @@ func (img imgur) Delete(deleteHash string) error {
 		return err
 	}
 
-	var resJSON map[string]interface{}
+	imgurResponse := new(ImgurResponse)
 
-	err = json.Unmarshal(resBody, &resJSON)
+	err = json.Unmarshal(resBody, &imgurResponse)
 	if err != nil {
 		return err
 	}
 
-	if !resJSON["success"].(bool) {
-		return models.ErrInternalServerError
+	if !imgurResponse.Success {
+		return fmt.Errorf("%s", imgurResponse.Data.Error)
 	}
 
 	return nil

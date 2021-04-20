@@ -1,4 +1,4 @@
-package repository
+package partner
 
 import (
 	"time"
@@ -7,25 +7,25 @@ import (
 	"gorm.io/gorm"
 )
 
+type PartnerRepository interface {
+	Create(partner *models.Partner) error
+	Fetch(query string, args string) (*[]models.Partner, error)
+	GetByID(id uint, partner *models.Partner) error
+	Update(id string, partner *models.Partner) error
+}
+
 type mysqlPartnerRepo struct {
 	db *gorm.DB
 }
 
 //NewPartnerRepo ....
-func NewPartnerRepo(db *gorm.DB) models.PartnerRepository {
-
+func NewPartnerRepo(db *gorm.DB) PartnerRepository {
 	return &mysqlPartnerRepo{db}
 }
 
 //Create ....
 func (repo *mysqlPartnerRepo) Create(partner *models.Partner) error {
-	err := repo.db.Create(partner).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repo.db.Create(partner).Error
 }
 
 //Fetch ....
@@ -42,19 +42,12 @@ func (repo *mysqlPartnerRepo) Fetch(query string, args string) (*[]models.Partne
 }
 
 //GetByID ....
-func (repo *mysqlPartnerRepo) GetByID(id uint) (*models.Partner, error) {
-	partner := new(models.Partner)
-	err := repo.db.Preload("Price").Preload("Address").First(&partner, id).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return partner, nil
+func (repo *mysqlPartnerRepo) GetByID(id uint, partner *models.Partner) error {
+	return repo.db.Preload("Price").Preload("Address").First(&partner, id).Error
 }
 
 //Update ....
-func (repo *mysqlPartnerRepo) Update(id uint, partner *models.Partner) error {
+func (repo *mysqlPartnerRepo) Update(id string, partner *models.Partner) error {
 
 	err := repo.db.Debug().Table("partners").Where("id = ?", id).Updates(map[string]interface{}{
 		"updated_at":   time.Now(),
@@ -75,16 +68,10 @@ func (repo *mysqlPartnerRepo) Update(id uint, partner *models.Partner) error {
 		return err
 	}
 
-	err = repo.db.Debug().Table("addresses").Where("partner_id = ?", id).Updates(map[string]interface{}{
+	return repo.db.Debug().Table("addresses").Where("partner_id = ?", id).Updates(map[string]interface{}{
 		"updated_at": time.Now(),
 		"address":    partner.Address.Address,
 		"lat":        partner.Address.Lat,
 		"lng":        partner.Address.Lng,
 	}).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -1,35 +1,34 @@
-package controllers
+package partner
 
 import (
 	"net/http"
 	"strconv"
 
 	"github.com/arfan21/getprint-partner/models"
-	"github.com/arfan21/getprint-partner/repository"
-	"github.com/arfan21/getprint-partner/services"
+	_followerRepo "github.com/arfan21/getprint-partner/repository/mysql/follower"
+	_partnerRepo "github.com/arfan21/getprint-partner/repository/mysql/partner"
+	_partnerSrv "github.com/arfan21/getprint-partner/services/partner"
 	"github.com/arfan21/getprint-partner/utils"
 	"github.com/arfan21/getprint-partner/validation"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
+type PartnerController interface {
+	Routes(route *echo.Echo)
+}
+
 type partnerController struct {
-	service models.PartnerService
+	partnerSrv _partnerSrv.PartnerService
 }
 
 //NewPartnerController ...
-func NewPartnerController(db *gorm.DB, route *echo.Echo) {
-	partnerRepo := repository.NewPartnerRepo(db)
-	followerRepo := repository.NewFollowerRepo(db)
-	partnerService := services.NewPartnerService(partnerRepo, followerRepo)
+func NewPartnerController(db *gorm.DB) PartnerController {
+	partnerRepo := _partnerRepo.NewPartnerRepo(db)
+	followerRepo := _followerRepo.NewFollowerRepo(db)
+	partnerService := _partnerSrv.NewPartnerService(partnerRepo, followerRepo)
 
-	ctrl := partnerController{partnerService}
-
-	route.POST("/partner", ctrl.Create)
-	route.GET("/partner", ctrl.Fetch)
-	route.GET("/partner/:id", ctrl.GetByID)
-	route.PUT("/partner/:id", ctrl.Update)
-
+	return &partnerController{partnerService}
 }
 
 //Create ....
@@ -44,7 +43,7 @@ func (ctrl *partnerController) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, utils.Response("error", err, nil))
 	}
 
-	err := ctrl.service.Create(partner)
+	err := ctrl.partnerSrv.Create(partner)
 
 	if err != nil {
 
@@ -56,7 +55,7 @@ func (ctrl *partnerController) Create(c echo.Context) error {
 
 //Fetch .....
 func (ctrl *partnerController) Fetch(c echo.Context) error {
-	partners, err := ctrl.service.Fetch(c)
+	partners, err := ctrl.partnerSrv.Fetch(c)
 
 	if err != nil {
 
@@ -74,7 +73,7 @@ func (ctrl *partnerController) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	partner, err := ctrl.service.GetByID(uint(id))
+	partner, err := ctrl.partnerSrv.GetByID(uint(id))
 
 	if err != nil {
 
@@ -102,7 +101,7 @@ func (ctrl *partnerController) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, utils.Response("error", err, nil))
 	}
 
-	err = ctrl.service.Update(uint(id), partner)
+	err = ctrl.partnerSrv.Update(uint(id), partner)
 
 	if err != nil {
 

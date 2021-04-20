@@ -1,29 +1,30 @@
-package repository
+package follower
 
 import (
 	"github.com/arfan21/getprint-partner/models"
 	"gorm.io/gorm"
 )
 
+type FollowerRepository interface {
+	Create(follower *models.Follower) error
+	GetByID(id uint) (*models.Follower, error)
+	CountFollower(partnerId string) (int64, error)
+	Delete(id uint) error
+}
+
 type followerRepo struct {
 	db *gorm.DB
 }
 
-func NewFollowerRepo(db *gorm.DB) models.FollowerRepository {
+func NewFollowerRepo(db *gorm.DB) FollowerRepository {
 	return &followerRepo{db}
 }
 
 func (repo *followerRepo) Create(follower *models.Follower) error {
-	err := repo.db.Create(follower).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repo.db.Create(follower).Error
 }
 
-func (repo *followerRepo) CountFollower(partnerId uint) (int64, error) {
+func (repo *followerRepo) CountFollower(partnerId string) (int64, error) {
 	var count int64
 	err := repo.db.Model(&models.Follower{}).Where("partner_id = ?", partnerId).Count(&count).Error
 
@@ -47,11 +48,5 @@ func (repo *followerRepo) GetByID(id uint) (*models.Follower, error) {
 }
 
 func (repo *followerRepo) Delete(id uint) error {
-	err := repo.db.Unscoped().Delete(&models.Follower{}, id).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repo.db.Unscoped().Delete(&models.Follower{}, id).Error
 }

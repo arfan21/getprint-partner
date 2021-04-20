@@ -1,31 +1,33 @@
-package controllers
+package follower
 
 import (
 	"net/http"
 	"strconv"
 
 	"github.com/arfan21/getprint-partner/models"
-	"github.com/arfan21/getprint-partner/repository"
-	"github.com/arfan21/getprint-partner/services"
+	_followerRepo "github.com/arfan21/getprint-partner/repository/mysql/follower"
+	_partnerRepo "github.com/arfan21/getprint-partner/repository/mysql/partner"
+	_followerSrv "github.com/arfan21/getprint-partner/services/follower"
 	"github.com/arfan21/getprint-partner/utils"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
+type PartnerController interface {
+	Routes(route *echo.Echo)
+}
+
 type followerController struct {
-	service models.FollowerService
+	followerSrv _followerSrv.FollowerService
 }
 
 //NewFollowerController ....
-func NewFollowerController(db *gorm.DB, route *echo.Echo) {
-	followerRepo := repository.NewFollowerRepo(db)
-	partnerRepo := repository.NewPartnerRepo(db)
-	followerService := services.NewFollowerService(followerRepo, partnerRepo)
+func NewFollowerController(db *gorm.DB) PartnerController {
+	followerRepo := _followerRepo.NewFollowerRepo(db)
+	partnerRepo := _partnerRepo.NewPartnerRepo(db)
+	followerService := _followerSrv.NewFollowerService(partnerRepo, followerRepo)
 
-	ctrl := followerController{followerService}
-
-	route.POST("/follow", ctrl.Create)
-	route.DELETE("/follow/:id", ctrl.Delete)
+	return &followerController{followerService}
 }
 
 //Create ....
@@ -36,7 +38,7 @@ func (ctrl *followerController) Create(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	err := ctrl.service.Create(follower)
+	err := ctrl.followerSrv.Create(follower)
 
 	if err != nil {
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
@@ -53,7 +55,7 @@ func (ctrl *followerController) Delete(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	err = ctrl.service.Delete(uint(id))
+	err = ctrl.followerSrv.Delete(uint(id))
 
 	if err != nil {
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))

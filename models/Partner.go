@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/labstack/echo/v4"
+	uuid "github.com/satori/go.uuid"
 	"gopkg.in/guregu/null.v4"
 	"gopkg.in/guregu/null.v4/zero"
 )
@@ -13,7 +13,7 @@ type Partner struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt   null.Time `gorm:"index" json:"deleted_at,omitempty"`
-	UserID      uint      `gorm:"not null;unique" json:"user_id"`
+	UserID      uuid.UUID `gorm:"not null;unique;type:char(36)" json:"user_id"`
 	Name        string    `gorm:"size:100;not null;unique" json:"name"`
 	Email       string    `gorm:"size:255;not null;unique" json:"email"`
 	PhoneNumber string    `gorm:"size:50;not null;unique" json:"phone_number"`
@@ -49,18 +49,4 @@ type Price struct {
 	Print     zero.Int  `gorm:"size:30" json:"print"`
 	Scan      zero.Int  `gorm:"size:30" json:"scan"`
 	Fotocopy  zero.Int  `gorm:"size:30" json:"fotocopy"`
-}
-
-type PartnerRepository interface {
-	Create(partner *Partner) error
-	Fetch(query string, args string) (*[]Partner, error)
-	GetByID(id uint) (*Partner, error)
-	Update(id uint, partner *Partner) error
-}
-
-type PartnerService interface {
-	Create(partner *Partner) error
-	Fetch(c echo.Context) (*[]Partner, error)
-	GetByID(id uint) (*PartnerWithCountFollower, error)
-	Update(id uint, partner *Partner) error
 }

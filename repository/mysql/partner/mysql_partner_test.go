@@ -1,4 +1,4 @@
-package repository
+package partner
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 	"github.com/arfan21/getprint-partner/models"
 	"github.com/arfan21/getprint-partner/utils"
 	"github.com/joho/godotenv"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -58,7 +59,7 @@ func TestCreate(t *testing.T) {
 	address.Lng = "-12,1200012"
 
 	payload := &models.Partner{
-		UserID:      1,
+		UserID:      uuid.NewV4(),
 		Name:        "enter komp",
 		Email:       "enter@enter.com",
 		PhoneNumber: "6281222212",
@@ -100,9 +101,11 @@ func TestGetById(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
+	partner := new(models.Partner)
+
 	repo := NewPartnerRepo(db)
 
-	data, err := repo.GetByID(2)
+	err = repo.GetByID(1, partner)
 
 	if err != nil {
 		if err.Error() == "partner not found" {
@@ -111,12 +114,12 @@ func TestGetById(t *testing.T) {
 		}
 	}
 
-	d, _ := json.MarshalIndent(data, "", "\t")
+	d, _ := json.MarshalIndent(partner, "", "\t")
 
 	log.Println(string(d))
 
 	assert.NoError(t, err, "should be no error")
-	assert.NotNil(t, data, "should be not nil")
+	assert.NotNil(t, partner, "should be not nil")
 }
 
 func TestUpdate(t *testing.T) {
@@ -147,7 +150,7 @@ func TestUpdate(t *testing.T) {
 
 	repo := NewPartnerRepo(db)
 
-	err = repo.Update(1, payload)
+	err = repo.Update("", payload)
 
 	assert.NoError(t, err, "should be no error")
 }
