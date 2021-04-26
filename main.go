@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	_followerCtrl "github.com/arfan21/getprint-partner/controllers/http/follower"
@@ -29,6 +30,12 @@ func main() {
 	route := echo.New()
 	route.Use(middleware.Recover())
 	route.Use(middleware.Logger())
+
+	route.GET("/", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message": "Getpring Service Partner",
+		})
+	})
 
 	followerCtrl := _followerCtrl.NewFollowerController(db)
 	followerCtrl.Routes(route)
