@@ -12,6 +12,6 @@ type Follower struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt null.Time `gorm:"index" json:"deleted_at,omitempty"`
-	PartnerID uint      `gorm:"not null;unique" json:"partner_id"`
+	PartnerID uint      `gorm:"not null" json:"partner_id"`
 	UserID    uuid.UUID `gorm:"not null;unique;type:char(36)" json:"user_id"`
 }

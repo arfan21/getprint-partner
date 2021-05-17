@@ -46,7 +46,6 @@ func (ctrl *partnerController) Create(c echo.Context) error {
 	err := ctrl.partnerSrv.Create(partner)
 
 	if err != nil {
-
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
@@ -55,7 +54,7 @@ func (ctrl *partnerController) Create(c echo.Context) error {
 
 //Fetch .....
 func (ctrl *partnerController) Fetch(c echo.Context) error {
-	partners, err := ctrl.partnerSrv.Fetch(c)
+	partners, err := ctrl.partnerSrv.Fetch(c.QueryParam("name"), c.QueryParam("status"))
 
 	if err != nil {
 

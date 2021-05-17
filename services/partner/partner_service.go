@@ -8,13 +8,12 @@ import (
 	_followerRepo "github.com/arfan21/getprint-partner/repository/mysql/follower"
 	_partnerRepo "github.com/arfan21/getprint-partner/repository/mysql/partner"
 	_userSrv "github.com/arfan21/getprint-partner/repository/user"
-	"github.com/labstack/echo/v4"
 )
 
 type PartnerService interface {
 	Create(partner *models.Partner) error
-	Fetch(c echo.Context) (*[]models.Partner, error)
-	GetByID(id uint) (*models.PartnerWithCountFollower, error)
+	Fetch(name, status string) (*[]models.Partner, error)
+	GetByID(id uint) (*models.PartnerResponse, error)
 	Update(id uint, partner *models.Partner) error
 }
 
@@ -64,11 +63,10 @@ func (srv *partnerService) Create(partner *models.Partner) error {
 }
 
 //Fetch ....
-func (srv *partnerService) Fetch(c echo.Context) (*[]models.Partner, error) {
-	q := c.QueryParam("q")
-	status := c.QueryParam("status")
+func (srv *partnerService) Fetch(name, status string) (*[]models.Partner, error) {
 
-	if q == "" {
+	if name == "" && status != "" {
+
 		partners, err := srv.partnerRepo.Fetch("status=?", status)
 
 		if err != nil {
@@ -76,16 +74,16 @@ func (srv *partnerService) Fetch(c echo.Context) (*[]models.Partner, error) {
 		}
 
 		return partners, nil
-	} else if status == "" {
-		partners, err := srv.partnerRepo.Fetch("name LIKE ? AND status='active'", strings.ToLower("%"+q+"%"))
+	} else if status == "" && name != "" {
+		partners, err := srv.partnerRepo.Fetch("name LIKE ? AND status='active'", strings.ToLower("%"+name+"%"))
 
 		if err != nil {
 			return nil, err
 		}
 
 		return partners, nil
-	} else if status == "inactive" && q != "" {
-		partners, err := srv.partnerRepo.Fetch("name LIKE ? AND status='inactive'", strings.ToLower("%"+q+"%"))
+	} else if status == "inactive" && name != "" {
+		partners, err := srv.partnerRepo.Fetch("name LIKE ? AND status='inactive'", strings.ToLower("%"+name+"%"))
 
 		if err != nil {
 			return nil, err
@@ -104,8 +102,37 @@ func (srv *partnerService) Fetch(c echo.Context) (*[]models.Partner, error) {
 
 }
 
-func (srv *partnerService) GetByID(id uint) (*models.PartnerWithCountFollower, error) {
-	return nil, nil
+func (srv *partnerService) GetByID(id uint) (*models.PartnerResponse, error) {
+	partner := new(models.Partner)
+	err := srv.partnerRepo.GetByID(id, partner)
+	if err != nil {
+		return nil, err
+	}
+
+	totalFollower, err := srv.partnerRepo.CountFollower(id)
+	if err != nil {
+		return nil, err
+	}
+
+	partnerResponse := &models.PartnerResponse{
+		ID:            partner.ID,
+		CreatedAt:     partner.CreatedAt,
+		UpdatedAt:     partner.UpdatedAt,
+		UserID:        partner.UserID,
+		Name:          partner.Name,
+		Email:         partner.Email,
+		PhoneNumber:   partner.PhoneNumber,
+		Picture:       partner.Picture,
+		Address:       partner.Address.Address,
+		Lat:           partner.Address.Lat,
+		Lng:           partner.Address.Lng,
+		Print:         partner.Price.Print,
+		Scan:          partner.Price.Scan,
+		Fotocopy:      partner.Price.Fotocopy,
+		TotalFollower: totalFollower,
+	}
+
+	return partnerResponse, nil
 }
 
 func (srv *partnerService) Update(id uint, partner *models.Partner) error {

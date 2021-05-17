@@ -12,6 +12,7 @@ type PartnerRepository interface {
 	Fetch(query string, args string) (*[]models.Partner, error)
 	GetByID(id uint, partner *models.Partner) error
 	Update(id string, partner *models.Partner) error
+	CountFollower(idPartner uint) (int64, error)
 }
 
 type mysqlPartnerRepo struct {
@@ -74,4 +75,14 @@ func (repo *mysqlPartnerRepo) Update(id string, partner *models.Partner) error {
 		"lat":        partner.Address.Lat,
 		"lng":        partner.Address.Lng,
 	}).Error
+}
+
+func (repo *mysqlPartnerRepo) CountFollower(idPartner uint) (int64, error) {
+	follower := new(models.Follower)
+	var count int64
+	err := repo.db.Model(follower).Where("partner_id = ?", idPartner).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }

@@ -1,8 +1,6 @@
 package follower
 
 import (
-	"sync"
-
 	"github.com/arfan21/getprint-partner/models"
 	_followerRepo "github.com/arfan21/getprint-partner/repository/mysql/follower"
 	_partnerRepo "github.com/arfan21/getprint-partner/repository/mysql/partner"
@@ -26,47 +24,18 @@ func NewFollowerService(partnerRepo _partnerRepo.PartnerRepository, followerRepo
 }
 
 func (srv *followerService) Create(follower *models.Follower) error {
-	var wg sync.WaitGroup
-
-	wg.Add(2)
-
-	chanUserError := make(chan error)
-	chanPartner := make(chan *models.Partner)
-
-	go func() {
-		defer wg.Done()
-
-		err := srv.partnerRepo.GetByID(follower.PartnerID, <-chanPartner)
-
-		if err != nil {
-			chanPartner <- nil
-			return
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-
-		err := srv.userSrv.VerificationUser(follower.UserID.String())
-
-		if err != nil {
-			chanUserError <- err
-			return
-		}
-
-		chanUserError <- nil
-	}()
-
-	errorUser := <-chanUserError
-	dataPartner := <-chanPartner
-
-	wg.Wait()
-
-	if dataPartner == nil || errorUser != nil {
+	err := srv.userSrv.VerificationUser(follower.UserID.String())
+	if err != nil {
 		return models.ErrNotFound
 	}
 
-	err := srv.followerRepo.Create(follower)
+	dataPartner := new(models.Partner)
+	err = srv.partnerRepo.GetByID(follower.PartnerID, dataPartner)
+	if err != nil {
+		return models.ErrNotFound
+	}
+
+	err = srv.followerRepo.Create(follower)
 
 	if err != nil {
 		return err
@@ -75,14 +44,14 @@ func (srv *followerService) Create(follower *models.Follower) error {
 	return nil
 }
 
-func (service *followerService) Delete(id uint) error {
-	_, err := service.followerRepo.GetByID(id)
+func (srv *followerService) Delete(id uint) error {
+	_, err := srv.followerRepo.GetByID(id)
 
 	if err != nil {
 		return err
 	}
 
-	err = service.followerRepo.Delete(id)
+	err = srv.followerRepo.Delete(id)
 
 	if err != nil {
 		return err
