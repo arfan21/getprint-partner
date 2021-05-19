@@ -33,7 +33,7 @@ func (repo *mysqlPartnerRepo) Create(partner *models.Partner) error {
 func (repo *mysqlPartnerRepo) Fetch(query string, args string) (*[]models.Partner, error) {
 	partners := make([]models.Partner, 0)
 
-	err := repo.db.Debug().Preload("Price").Preload("Address").Where(query, args).Find(&partners).Error
+	err := repo.db.Preload("Price").Preload("Address").Where(query, args).Find(&partners).Error
 
 	if err != nil {
 		return nil, err

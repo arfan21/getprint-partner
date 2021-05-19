@@ -12,7 +12,7 @@ import (
 
 type PartnerService interface {
 	Create(partner *models.Partner) error
-	Fetch(name, status string) (*[]models.Partner, error)
+	Fetch(name, status string) ([]*models.PartnerResponse, error)
 	GetByID(id uint) (*models.PartnerResponse, error)
 	Update(id uint, partner *models.Partner) error
 }
@@ -63,43 +63,67 @@ func (srv *partnerService) Create(partner *models.Partner) error {
 }
 
 //Fetch ....
-func (srv *partnerService) Fetch(name, status string) (*[]models.Partner, error) {
+func (srv *partnerService) Fetch(name, status string) ([]*models.PartnerResponse, error) {
+	var partners *[]models.Partner
 
 	if name == "" && status != "" {
-
-		partners, err := srv.partnerRepo.Fetch("status=?", status)
+		data, err := srv.partnerRepo.Fetch("status=?", status)
 
 		if err != nil {
 			return nil, err
 		}
 
-		return partners, nil
+		partners = data
+
 	} else if status == "" && name != "" {
-		partners, err := srv.partnerRepo.Fetch("name LIKE ? AND status='active'", strings.ToLower("%"+name+"%"))
+		data, err := srv.partnerRepo.Fetch("name LIKE ? AND status='active'", strings.ToLower("%"+name+"%"))
 
 		if err != nil {
 			return nil, err
 		}
 
-		return partners, nil
+		partners = data
 	} else if status == "inactive" && name != "" {
-		partners, err := srv.partnerRepo.Fetch("name LIKE ? AND status='inactive'", strings.ToLower("%"+name+"%"))
+		data, err := srv.partnerRepo.Fetch("name LIKE ? AND status='inactive'", strings.ToLower("%"+name+"%"))
 
 		if err != nil {
 			return nil, err
 		}
 
-		return partners, nil
+		partners = data
 	} else {
-		partners, err := srv.partnerRepo.Fetch("status = ?", "active")
+		data, err := srv.partnerRepo.Fetch("status = ?", "active")
 
 		if err != nil {
 			return nil, err
 		}
 
-		return partners, nil
+		partners = data
 	}
 
+	resArr := make([]*models.PartnerResponse, 0)
+
+	for _, partner := range *partners {
+		res := &models.PartnerResponse{
+			ID:          partner.ID,
+			CreatedAt:   partner.CreatedAt,
+			UpdatedAt:   partner.UpdatedAt,
+			UserID:      partner.UserID,
+			Name:        partner.Name,
+			Email:       partner.Email,
+			PhoneNumber: partner.PhoneNumber,
+			Picture:     partner.Picture,
+			Address:     partner.Address.Address,
+			Lat:         partner.Address.Lat,
+			Lng:         partner.Address.Lng,
+			Print:       partner.Price.Print,
+			Scan:        partner.Price.Scan,
+			Fotocopy:    partner.Price.Fotocopy,
+		}
+		resArr = append(resArr, res)
+	}
+
+	return resArr, nil
 }
 
 func (srv *partnerService) GetByID(id uint) (*models.PartnerResponse, error) {

@@ -22,5 +22,5 @@ type PartnerResponse struct {
 	Print         zero.Int  `json:"print"`
 	Scan          zero.Int  `json:"scan"`
 	Fotocopy      zero.Int  `json:"fotocopy"`
-	TotalFollower int64     `json:"total_follower"`
+	TotalFollower int64     `json:"total_follower,omitempty"`
 }
